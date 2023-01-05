@@ -28,7 +28,7 @@ if !exists('g:colorswitch_dark_theme')
 endif
 
 if !exists('g:colorswitch_dark_airline')
-    let g:colorswitch_dark_airline='dark'
+    let g:colorswitch_dark_airline='simple'
 endif
 
 if !exists('g:colorswitch_light_theme')
@@ -36,7 +36,7 @@ if !exists('g:colorswitch_light_theme')
 endif
 
 if !exists('g:colorswitch_light_airline')
-    let g:colorswitch_light_airline='dark'
+    let g:colorswitch_light_airline='simple'
 endif
 
 function s:set_dark()
