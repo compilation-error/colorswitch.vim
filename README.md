@@ -16,9 +16,9 @@ Currently works for MacOS and linux (KDE) only.
 
 ## Installation
 Using [vim-plug](https://github.com/junegunn/vim-plug)
-
-`Plug 'compilation-error/colorswitch'`
-
+```
+Plug 'compilation-error/colorswitch.vim'
+```
 ## Usage
 Set the following in your `.vimrc`
 ```
