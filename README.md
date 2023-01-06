@@ -22,14 +22,12 @@ Plug 'compilation-error/colorswitch.vim'
 ## Usage
 Set the following in your `.vimrc`
 ```
-let g:colorswitch_dark_theme='<dark_vim_colorscheme>'
-let g:colorswitch_dark_airline='<dark_airline_theme>'
-let g:colorswitch_light_theme='<light_vim_colorscheme>'
-let g:colorswitch_light_airline='<light_airline_theme>'
+let g:colorswitch_dark_theme='default'
+let g:colorswitch_dark_airline='dark'
+let g:colorswitch_light_theme='default'
+let g:colorswitch_light_airline='dark'
 ```
-These are set to `default` and `dark` for vim and airline themes, respectively.
-
-Automatic Switching when Vim starts.
+Automatic switching based on OS model when Vim starts.
 
 Manually call `ColorSwitchDark`, `ColorSwitchLight`, or `ColorSwitchToggle` to switch to dark, light modes or toggle mode, respectively.
 
