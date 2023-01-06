@@ -40,6 +40,14 @@ if !exists('g:colorswitch_light_airline')
     let g:colorswitch_light_airline='dark'
 endif
 
+if !exists('g:colorswitch_mode')
+  let g:colorswitch_mode='dark'
+endif
+
+if !exists('g:colorswitch_autoswitch')
+  let g:colorswitch_autoswitch=0
+endif
+
 
 function! s:set_theme()
   let l:theme = (g:colorswitch_mode ==? 'dark') ? g:colorswitch_dark_theme : g:colorswitch_light_theme
@@ -74,13 +82,13 @@ function! s:set_light()
 endfunction
 
 
-function! s:colorswitch()
-  let g:colorswitch_mode = 'dark'
+function! s:get_os_mode()
+  let l:os_mode = 'dark'
   let l:os = substitute(system('uname 2>/dev/null'), '[[:cntrl:]]', '', 'g')
   if l:os ==? "Darwin"
     let l:theme = system('defaults read -g AppleInterfaceStyle >/dev/null 2>&1')
     if v:shell_error
-      let g:colorswitch_mode = 'light'
+      let l:os_mode = 'light'
     endif
   else
     try
@@ -89,26 +97,62 @@ function! s:colorswitch()
             \ org.freedesktop.portal.Settings.Read
             \ "org.freedesktop.appearance" "color-scheme"')
       if l:theme == 2
-        let g:colorswitch_mode = 'light'
+        let l:os_mode = 'light'
       endif
     catch
       echom s:plugin_name . ': Could not detect OS mode. Ensure xdg-portal-desktop is installed.'
     endtry
   endif
-  call s:set_theme()
+  return l:os_mode
+endfunction
+
+
+function! s:colorswitch()
+  let l:os_mode = s:get_os_mode()
+  if l:os_mode != g:colorswitch_mode
+    let g:colorswitch_mode = l:os_mode
+    call s:set_theme()
+  endif
+endfunction
+
+function! s:timed_autoswitch(timer)
+  call s:colorswitch()
+endfunction
+
+function! s:set_auto()
+  if exists('s:timer')
+    call timer_stop(s:timer)
+    unlet s:timer
+  endif
+
+  let g:colorswitch_autoswitch = 1
+  let s:timer = timer_start(400, 's:timed_autoswitch', {'repeat':-1})
+endfunction
+
+function! s:set_manual()
+  if exists('s:timer')
+    call timer_stop(s:timer)
+    unlet s:timer
+  endif
+
+  let g:colorswitch_autoswitch = 0
 endfunction
 
 
 " User Commands
-command! -nargs=0 ColorSwitchDark call s:set_dark()
-command! -nargs=0 ColorSwitchLight call s:set_light()
-command! -nargs=0 ColorSwitchToggle call s:toggle()
+command! -nargs=0 ColorSwitchDark   call s:set_manual() | call s:set_dark()
+command! -nargs=0 ColorSwitchLight  call s:set_manual() | call s:set_light()
+command! -nargs=0 ColorSwitchToggle call s:set_manual() | call s:toggle()
+command! -nargs=0 ColorSwitchAuto   call s:set_auto()   | call s:set_auto()
 
 " Key Mapping
 nnoremap <Plug>(ColorSwitchToggle) :<c-u>call ColorSwitchToggle()<CR>
 
 
 call s:colorswitch()
+if g:colorswitch_autoswitch == 1
+  call s:set_auto()
+endif
 
 
 let &cpo = s:cpo_save
