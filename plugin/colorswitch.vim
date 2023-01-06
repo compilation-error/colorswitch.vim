@@ -21,14 +21,15 @@
 let s:cpo_save = &cpo
 set cpo&vim
 
-let s:plugin_name = 'colorswitch'
+
+let s:plugin_name = 'colorswitch.vim'
 
 if !exists('g:colorswitch_dark_theme')
     let g:colorswitch_dark_theme='default'
 endif
 
 if !exists('g:colorswitch_dark_airline')
-    let g:colorswitch_dark_airline='simple'
+    let g:colorswitch_dark_airline='dark'
 endif
 
 if !exists('g:colorswitch_light_theme')
@@ -36,64 +37,82 @@ if !exists('g:colorswitch_light_theme')
 endif
 
 if !exists('g:colorswitch_light_airline')
-    let g:colorswitch_light_airline='simple'
+    let g:colorswitch_light_airline='dark'
 endif
 
-function s:set_dark()
-      set background=dark
-      execute 'colorscheme ' . g:colorswitch_dark_theme
-      let g:airline_theme=g:colorswitch_dark_airline
-      let g:colorswitch_mode='dark'
+
+function! s:set_theme()
+  let l:theme = (g:colorswitch_mode ==? 'dark') ? g:colorswitch_dark_theme : g:colorswitch_light_theme
+  let l:airline = (g:colorswitch_mode ==? 'dark') ? g:colorswitch_dark_airline : g:colorswitch_light_airline
+
+  try
+    execute 'silent! colorscheme ' . l:theme
+    let g:airline_theme=l:airline
+  catch
+    echom s:plugin_name . ': colorscheme or airline_theme missing. Using defaults.'
+    colorscheme default
+    let g:airline_theme='dark'
+  finally
+    execute 'set background=' . g:colorswitch_mode
+  endtry
 endfunction
 
-function s:set_light()
-      set background=light
-      execute 'colorscheme ' . g:colorswitch_light_theme
-      let g:airline_theme=g:colorswitch_light_airline
-      let g:colorswitch_mode='light'
-endfunction
 
 function s:toggle()
-  if g:colorswitch_mode == 'dark'
-    call s:set_light()
-  else
-    call s:set_dark()
-  endif
+  let g:colorswitch_mode = (g:colorswitch_mode ==? 'dark') ? 'light' : 'dark'
+  call s:set_theme()
 endfunction
 
+function! s:set_dark()
+  let g:colorswitch_mode = 'dark'
+  call s:set_theme()
+endfunction
+
+function! s:set_light()
+  let g:colorswitch_mode = 'light'
+  call s:set_theme()
+endfunction
+
+
 function! s:colorswitch()
-  let l:is_dark = 1
+  let g:colorswitch_mode = 'dark'
   let l:os = substitute(system('uname 2>/dev/null'), '[[:cntrl:]]', '', 'g')
   if l:os ==? "Darwin"
     let l:theme = system('defaults read -g AppleInterfaceStyle >/dev/null 2>&1')
     if v:shell_error
-      let l:is_dark = 0
+      let g:colorswitch_mode = 'light'
     endif
   else
-    " Requires xdg-portal-desktop to be installed
-    let l:theme = system('qdbus org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.Settings.Read "org.freedesktop.appearance" "color-scheme"')
-    if l:theme == 2
-      let l:is_dark = 0
-    endif
+    try
+      let l:theme = system('qdbus org.freedesktop.portal.Desktop
+            \ /org/freedesktop/portal/desktop
+            \ org.freedesktop.portal.Settings.Read
+            \ "org.freedesktop.appearance" "color-scheme"')
+      if l:theme == 2
+        let g:colorswitch_mode = 'light'
+      endif
+    catch
+      echom s:plugin_name . ': Could not detect OS mode. Ensure xdg-portal-desktop is installed.'
+    endtry
   endif
-
-  if l:is_dark
-    call s:set_dark()
-  else
-    call s:set_light()
-  endif
+  call s:set_theme()
 endfunction
 
-" User commands
+
+" User Commands
 command! -nargs=0 ColorSwitchDark call s:set_dark()
 command! -nargs=0 ColorSwitchLight call s:set_light()
 command! -nargs=0 ColorSwitchToggle call s:toggle()
 
+" Key Mapping
 nnoremap <Plug>(ColorSwitchToggle) :<c-u>call ColorSwitchToggle()<CR>
+
 
 call s:colorswitch()
 
+
 let &cpo = s:cpo_save
 unlet s:cpo_save
+
 " vim: set ft=vim sw=2 et ts=2 sts=2 foldmethod=marker:
 "
