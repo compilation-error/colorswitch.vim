@@ -64,11 +64,16 @@ function s:init()
   "  let s:platform('macvim')
   endif
 
-  echom s:plugin_name . ": Identified platform " . s:platform
+  if s:platform == ''
+    finish
+  endif
+
+  " echom s:plugin_name . ": Identified platform " . s:platform
   let s:get_os_mode = function("s:get_os_mode_" . s:platform)
+  let s:pid = getpid()
 
   call s:colorswitch()
-  call s:set_theme()
+
   if g:colorswitch_autoswitch == 1
     call s:set_auto()
   endif
@@ -76,11 +81,8 @@ endfunction
 
 
 function! s:colorswitch()
-  let l:os_mode = s:get_os_mode()
-  if l:os_mode != g:colorswitch_mode
-    let g:colorswitch_mode = l:os_mode
-    call s:set_theme()
-  endif
+  let g:colorswitch_mode = s:get_os_mode()
+  call s:set_theme()
 endfunction
 
 
@@ -88,8 +90,7 @@ function! s:set_theme()
   let l:theme = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_theme : g:colorswitch_light_theme
   let l:airline = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_airline : g:colorswitch_light_airline
 
-  echom s:plugin_name . ": Setting theme " . g:colorswitch_mode . "( " . l:theme . ", " . l:airline . " )"
-
+  " echo s:plugin_name . ": Setting theme " . g:colorswitch_mode . "( " . l:theme . ", " . l:airline . " )"
   try
     execute 'silent! colorscheme ' . l:theme
     let g:airline_theme = l:airline
@@ -145,14 +146,9 @@ function! s:get_os_mode_linux()
 endfunction
 
 
-function! s:timed_autoswitch(timer)
-  call s:colorswitch()
-endfunction
-
 function s:callback_handler(channel, message)
-  echom a:channel . "->" . a:message
+  " echom a:channel . "->" . a:message
 endfunction
-
 
 function! s:set_auto()
   if exists('s:watcher') && s:job_stat() ==? 'run'
@@ -164,24 +160,29 @@ function! s:set_auto()
     return
   endif
 
-  let options = {'out_cb': function('s:callback_handler')}
-  let s:watcher = job_start("watch -t -n600 'defaults read -g AppleInterfaceStyle'", options)
-  echom "Job Status: " . job_status(s:watcher)
+  augroup auto_mode
+    autocmd!
+    " autocmd sigUSR1 * echo "Recieved OS SIGUSR1 from watcher.sh"
+    autocmd sigUSR1 * call s:colorswitch()
+  augroup END
+
+  let job_cmd = "sh " . resolve(expand('<sfile>:p:h')) . "/" . s:platform . "_watch.sh " . s:pid
+  let options = {'callback': function('s:callback_handler')}
+  let s:watcher = job_start(job_cmd, options)
+  " echom "Job Status: " . job_info(s:watcher)
 endfunction
 
 function! s:job_stat()
   if !exists('s:watcher')
-    finish
+    return
   endif
 
   let l:job_stat = job_status(s:watcher)
-  echom "Job Status: " . l:job_stat
   echom job_info(s:watcher)
   return l:job_stat
 endfunction
 
 function! s:set_manual()
-  let g:colorswitch_autoswitch = 0
   if exists('s:watcher')
     call job_stop(s:watcher)
   endif
