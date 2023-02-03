@@ -48,6 +48,22 @@ if !exists('g:colorswitch_mode')
   let g:colorswitch_mode='dark'
 endif
 
+if !exists('g:colorswitch_light_prehook')
+  let g:colorswitch_light_prehook=""
+endif
+
+if !exists('g:colorswitch_light_posthook')
+  let g:colorswitch_light_posthook=""
+endif
+
+if !exists('g:colorswitch_dark_prehook')
+  let g:colorswitch_dark_prehook=""
+endif
+
+if !exists('g:colorswitch_dark_posthook')
+  let g:colorswitch_dark_posthook=""
+endif
+
 if !exists('g:colorswitch_autoswitch')
   let g:colorswitch_autoswitch=0
 endif
@@ -89,11 +105,15 @@ endfunction
 function! s:set_theme()
   let l:theme = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_theme : g:colorswitch_light_theme
   let l:airline = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_airline : g:colorswitch_light_airline
+  let l:prehook = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_prehook : g:colorswitch_light_prehook
+  let l:posthook = (g:colorswitch_mode == 'dark') ? g:colorswitch_dark_posthook : g:colorswitch_light_posthook
 
   " echo s:plugin_name . ": Setting theme " . g:colorswitch_mode . "( " . l:theme . ", " . l:airline . " )"
   try
+    execute l:prehook
     execute 'silent! colorscheme ' . l:theme
     let g:airline_theme = l:airline
+    execute l:posthook
   catch
     echoe s:plugin_name . ': colorscheme or airline_theme missing. Using defaults.'
     colorscheme default
